@@ -1,13 +1,12 @@
 FROM alexcheng/apache2-php7
 
-MAINTAINER Fu Cheng <alexcheng1982@gmail.com>
+MAINTAINER Aaron Bedward
 
 RUN a2enmod rewrite
 
-ENV MAGENTO_VERSION 2.1.4
+ENV MAGENTO_VERSION 2.0.9
 
 RUN rm -rf /var/www/html/*
-RUN cd /tmp && curl https://codeload.github.com/magento/magento2/tar.gz/$MAGENTO_VERSION -o $MAGENTO_VERSION.tar.gz && tar xvf $MAGENTO_VERSION.tar.gz && mv magento2-$MAGENTO_VERSION/* magento2-$MAGENTO_VERSION/.htaccess /var/www/html
 
 RUN curl -sS https://getcomposer.org/installer | php
 RUN mv composer.phar /usr/local/bin/composer
@@ -28,19 +27,16 @@ RUN requirements="libpng12-dev libmcrypt-dev libmcrypt4 libcurl3-dev libfreetype
 COPY ./auth.json /var/www/.composer/
 RUN chsh -s /bin/bash www-data
 RUN chown -R www-data:www-data /var/www
-RUN su www-data -c "cd /var/www/html && composer install"
+RUN su www-data -c "cd /var/www/html &&  composer create-project --repository-url=https://repo.magento.com/ magento/project-community-edition ."
 RUN cd /var/www/html \
     && find . -type d -exec chmod 770 {} \; \
-    && find . -type f -exec chmod 660 {} \; \
-    && chmod u+x bin/magento
+    && find . -type f -exec chmod 660 {} \; 
 
-COPY ./bin/install-magento /usr/local/bin/install-magento
-RUN chmod +x /usr/local/bin/install-magento
 
 COPY ./bin/install-sampledata /usr/local/bin/install-sampledata
 RUN chmod +x /usr/local/bin/install-sampledata
 
-RUN echo "memory_limit=1024M" > /usr/local/etc/php/conf.d/memory-limit.ini
+RUN echo "memory_limit=2048M" > /usr/local/etc/php/conf.d/memory-limit.ini
 
 RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
